@@ -31,336 +31,525 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['surname']); ?> - Student Profile</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #2563eb;
-            --secondary-color: #1e40af;
-            --accent-color: #3b82f6;
-            --success-color: #10b981;
-            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--gradient-bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
             min-height: 100vh;
-            padding: 2rem 0;
         }
 
-        .profile-container {
-            max-width: 800px;
+        .container {
+            max-width: 900px;
             margin: 0 auto;
-            padding: 0 1rem;
-        }
-
-        .profile-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            overflow: hidden;
-        }
-
-        .profile-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 3rem 2rem;
-            text-align: center;
-            position: relative;
-        }
-
-        .profile-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.1)"><polygon points="0,0 1000,0 1000,100 0,80"/></svg>') bottom;
-            background-size: cover;
-        }
-
-        .student-avatar {
-            width: 120px;
-            height: 120px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            font-size: 3rem;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            position: relative;
-            z-index: 1;
-        }
-
-        .profile-body {
             padding: 2rem;
         }
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 2rem;
         }
 
-        .info-card {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            border-radius: 16px;
-            padding: 1.5rem;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .info-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .info-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            color: white;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
-            font-size: 1.25rem;
-        }
-
-        .info-label {
-            font-size: 0.875rem;
-            color: #6b7280;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #000000;
             margin-bottom: 0.5rem;
         }
 
-        .info-value {
-            font-size: 1.125rem;
-            color: #111827;
-            font-weight: 700;
-            line-height: 1.4;
-        }
-
-        .certificate-section {
-            background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
-            border-radius: 20px;
-            padding: 2rem;
-            border: 2px solid var(--success-color);
-            margin-top: 2rem;
-            text-align: center;
-        }
-
-        .certificate-badge {
-            display: inline-flex;
-            align-items: center;
-            background: var(--success-color);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 50px;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            font-size: 1.125rem;
-        }
-
-        .verification-info {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-            border: 1px solid rgba(0, 0, 0, 0.1);
+        .header p {
+            color: #666666;
+            font-size: 1rem;
         }
 
         .back-button {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 0.75rem 1.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
             display: inline-flex;
             align-items: center;
-            position: absolute;
-            top: 2rem;
-            left: 2rem;
-            z-index: 2;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: #000000;
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e5e5;
+            background: #ffffff;
+            transition: all 0.2s ease;
         }
 
         .back-button:hover {
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
+            background: #f5f5f5;
+        }
+
+        .profile-container {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            background: #000000;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 auto 1rem auto;
+        }
+
+        .profile-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-id {
+            color: #666666;
+            font-size: 0.9rem;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .data-item {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .data-item:hover {
+            background: #fafafa;
+        }
+
+        .data-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #666666;
+            margin-bottom: 0.5rem;
+        }
+
+        .data-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #000000;
+            word-wrap: break-word;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-active {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .status-completed {
+            background: #666666;
+            color: #ffffff;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .btn-primary {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: #333333;
+            color: #ffffff;
             text-decoration: none;
         }
 
-        .print-button {
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 12px;
+        .btn-secondary {
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #e5e5e5;
+        }
+
+        .btn-secondary:hover {
+            background: #f5f5f5;
+            text-decoration: none;
+            color: #000000;
+        }
+
+        .qr-section {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .qr-code-container {
+            display: inline-block;
+            padding: 1rem;
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            margin: 1rem 0;
+        }
+
+        .certificate-section {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .certificate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .certificate-card {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .certificate-title {
+            font-size: 1rem;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            margin-top: 1rem;
+            color: #000000;
+            margin-bottom: 0.5rem;
         }
 
-        .print-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+        .certificate-date {
+            font-size: 0.9rem;
+            color: #666666;
         }
 
-        @media print {
-            body {
-                background: white;
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
             }
-            .back-button, .print-button {
-                display: none;
+            
+            .data-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
             }
-            .profile-card {
-                box-shadow: none;
-                border: 1px solid #ddd;
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .back-button {
+                position: static;
+                transform: none;
+                margin-bottom: 1rem;
+            }
+
+            .header {
+                text-align: left;
             }
         }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .info-card {
-            animation: fadeInUp 0.6s ease forwards;
-        }
-
-        .info-card:nth-child(1) { animation-delay: 0.1s; }
-        .info-card:nth-child(2) { animation-delay: 0.2s; }
-        .info-card:nth-child(3) { animation-delay: 0.3s; }
-        .info-card:nth-child(4) { animation-delay: 0.4s; }
-        .info-card:nth-child(5) { animation-delay: 0.5s; }
-        .info-card:nth-child(6) { animation-delay: 0.6s; }
     </style>
 </head>
 <body>
-    <div class="profile-container">
-        <div class="profile-card">
-            <div class="profile-header">
-                <a href="<?php echo BASE_URL; ?>" class="back-button">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Verification
-                </a>
-                
-                <div class="student-avatar">
-                    <i class="fas fa-user-graduate"></i>
+    <div class="container">
+        <div class="header">
+            <a href="<?php echo BASE_URL; ?>" class="back-button">← Back to Verification</a>
+            <h1>Student Profile</h1>
+            <p>Certificate verification details</p>
+        </div>
+
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-banner"></div>
+            <div class="profile-info">
+                <div class="profile-avatar">
+                    <?php echo strtoupper(substr($student['first_name'], 0, 1) . substr($student['surname'], 0, 1)); ?>
                 </div>
-                
-                <h1 class="h2 mb-2"><?php echo htmlspecialchars($student['surname'] . ', ' . $student['first_name'] . ' ' . $student['middle_name']); ?></h1>
-                <p class="mb-0 opacity-75"><?php echo htmlspecialchars($student['programme_title']); ?></p>
-                <p class="small opacity-75"><?php echo htmlspecialchars($student['department']); ?></p>
-            </div>
-
-            <div class="profile-body">
-                <div class="info-grid">
-                    <div class="info-card">
-                        <div class="info-icon">
-                            <i class="fas fa-certificate"></i>
-                        </div>
-                        <div class="info-label">Certificate Number</div>
-                        <div class="info-value"><?php echo htmlspecialchars($student['certificate_number']); ?></div>
+                <div>
+                    <h1 class="h1"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['surname']); ?></h1>
+                    <p class="text-muted">Student at Weldios Institution</p>
+                    <div style="margin: 1rem 0;">
+                        <span class="status-badge status-active">
+                            <i data-lucide="check-circle"></i>
+                            Verified Certificate
+                        </span>
                     </div>
-
-                    <div class="info-card">
-                        <div class="info-icon">
-                            <i class="fas fa-id-card"></i>
-                        </div>
-                        <div class="info-label">Matriculation Number</div>
-                        <div class="info-value"><?php echo htmlspecialchars($student['matriculation_number']); ?></div>
-                    </div>
-
-                    <div class="info-card">
-                        <div class="info-icon">
-                            <i class="fas fa-graduation-cap"></i>
-                        </div>
-                        <div class="info-label">Programme Type</div>
-                        <div class="info-value"><?php echo htmlspecialchars(ucfirst($student['programme_type'])); ?></div>
-                    </div>
-
-                    <div class="info-card">
-                        <div class="info-icon">
-                            <i class="fas fa-building"></i>
-                        </div>
-                        <div class="info-label">Department</div>
-                        <div class="info-value"><?php echo htmlspecialchars($student['department']); ?></div>
-                    </div>
-
-                    <?php if (!empty($student['class_of_degree'])): ?>
-                    <div class="info-card">
-                        <div class="info-icon">
-                            <i class="fas fa-medal"></i>
-                        </div>
-                        <div class="info-label">Class of Degree</div>
-                        <div class="info-value"><?php echo htmlspecialchars($student['class_of_degree']); ?></div>
-                    </div>
-                    <?php endif; ?>
-
-                    <div class="info-card">
-                        <div class="info-icon">
-                            <i class="fas fa-calendar"></i>
-                        </div>
-                        <div class="info-label">Year of Graduation</div>
-                        <div class="info-value"><?php echo htmlspecialchars($student['year_of_graduation']); ?></div>
-                    </div>
-                </div>
-
-                <div class="certificate-section">
-                    <div class="certificate-badge">
-                        <i class="fas fa-check-circle me-2"></i>
-                        Certificate Verified
-                    </div>
-                    
-                    <h4 class="text-success mb-3">Authentic Certificate</h4>
-                    <p class="text-muted mb-0">
-                        This certificate has been verified as authentic and is issued by Weldios University. 
-                        The information displayed above is accurate and can be trusted for official purposes.
-                    </p>
-
-                    <div class="verification-info">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <small class="text-muted d-block">Profile Generated:</small>
-                                <strong><?php echo date('F j, Y', strtotime($student['created_at'])); ?></strong>
-                            </div>
-                            <div class="col-md-6">
-                                <small class="text-muted d-block">Last Updated:</small>
-                                <strong><?php echo date('F j, Y', strtotime($student['updated_at'])); ?></strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button onclick="window.print()" class="print-button">
-                        <i class="fas fa-print me-2"></i>Print Profile
-                    </button>
                 </div>
             </div>
         </div>
+
+        <!-- Personal Information -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h3" style="margin: 0; color: white;">
+                    <i data-lucide="user" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+                    Personal Information
+                </h2>
+            </div>
+            <div class="card-content">
+                <div class="data-grid">
+                    <div class="data-item">
+                        <div class="data-label">Full Name</div>
+                        <div class="data-value"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['other_names'] . ' ' . $student['surname']); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Date of Birth</div>
+                        <div class="data-value"><?php echo htmlspecialchars(date('F j, Y', strtotime($student['date_of_birth']))); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Gender</div>
+                        <div class="data-value"><?php echo htmlspecialchars(ucfirst($student['gender'])); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Nationality</div>
+                        <div class="data-value"><?php echo htmlspecialchars($student['nationality']); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">State of Origin</div>
+                        <div class="data-value"><?php echo htmlspecialchars($student['state_of_origin']); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Matriculation Number</div>
+                        <div class="data-value"><?php echo htmlspecialchars($student['matriculation_number']); ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic Information -->
+        <div class="card" style="margin-top: 2rem;">
+            <div class="card-header">
+                <h2 class="h3" style="margin: 0; color: white;">
+                    <i data-lucide="graduation-cap" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+                    Academic Credentials
+                </h2>
+            </div>
+            <div class="card-content">
+                <div class="data-grid">
+                    <div class="data-item">
+                        <div class="data-label">Certificate Number</div>
+                        <div class="data-value"><?php echo htmlspecialchars($student['certificate_number']); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Programme Type</div>
+                        <div class="data-value"><?php echo htmlspecialchars(ucwords($student['programme_type'])); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Programme Title</div>
+                        <div class="data-value"><?php echo htmlspecialchars($student['programme_title']); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Department</div>
+                        <div class="data-value"><?php echo htmlspecialchars($student['department']); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Class of Degree</div>
+                        <div class="data-value"><?php echo htmlspecialchars($student['class_of_degree']); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Year of Graduation</div>
+                        <div class="data-value"><?php echo htmlspecialchars($student['year_of_graduation']); ?></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Issue Date</div>
+                        <div class="data-value"><?php echo htmlspecialchars(date('F j, Y', strtotime($student['issue_date']))); ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Section -->
+        <div class="qr-section">
+            <h3 class="h3">Certificate Verification QR Code</h3>
+            <p class="text-muted">Scan this QR code to verify this certificate</p>
+            <div class="qr-code-container">
+                <div id="qrcode"></div>
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button onclick="copyProfileUrl('<?php echo BASE_URL . 'profile.php?id=' . $student['profile_url']; ?>')" class="btn btn-secondary">
+                    <i data-lucide="copy"></i>
+                    Copy Profile URL
+                </button>
+                <button onclick="window.print()" class="btn btn-primary">
+                    <i data-lucide="printer"></i>
+                    Print Certificate
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 1px solid hsl(var(--border));">
+            <p class="text-muted text-sm">
+                This certificate has been digitally verified by Weldios Institution<br>
+                Generated on <?php echo date('F j, Y \a\t g:i A'); ?>
+            </p>
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Modern JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // QR Code generation
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                if (typeof QRCode !== 'undefined') {
+                    const qrContainer = document.getElementById('qrcode');
+                    if (qrContainer) {
+                        qrContainer.style.textAlign = 'center';
+                        const qr = new QRCode(qrContainer, {
+                            text: '<?php echo BASE_URL . 'profile.php?id=' . $student['profile_url']; ?>',
+                            width: 200,
+                            height: 200,
+                            colorDark: 'hsl(28 25 23)',
+                            colorLight: '#ffffff',
+                            correctLevel: QRCode.CorrectLevel.M
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('QR Code generation error:', error);
+            }
+        });
+
+        // Copy URL function
+        function copyProfileUrl(url) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(function() {
+                    showCopySuccess();
+                }).catch(function(err) {
+                    fallbackCopyTextToClipboard(url);
+                });
+            } else {
+                fallbackCopyTextToClipboard(url);
+            }
+        }
+        
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess();
+                } else {
+                    alert('Failed to copy URL. Please copy manually: ' + text);
+                }
+            } catch (err) {
+                alert('Failed to copy URL. Please copy manually: ' + text);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        function showCopySuccess() {
+            const btn = event?.target?.closest('button');
+            if (btn) {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check"></i> Copied!';
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }, 2000);
+            }
+        }
+
+        // Print styles
+        const printStyles = `
+            @media print {
+                body {
+                    background: white !important;
+                    color: black !important;
+                }
+                .qr-section {
+                    page-break-inside: avoid;
+                }
+                .btn {
+                    display: none !important;
+                }
+                .card {
+                    border: 1px solid #ccc !important;
+                    box-shadow: none !important;
+                }
+            }
+        `;
+        
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = printStyles;
+        document.head.appendChild(styleSheet);
+    </script>
 </body>
 </html>

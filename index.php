@@ -4,67 +4,349 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Certificate Verification - Weldios</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #2563eb;
-            --secondary-color: #1e40af;
-            --accent-color: #3b82f6;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --dark-color: #1f2937;
-            --light-color: #f8fafc;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
             min-height: 100vh;
-            padding: 0;
-            margin: 0;
         }
 
-        .container-fluid {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .verification-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            overflow: hidden;
-            max-width: 500px;
-            width: 100%;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
             padding: 2rem;
-            text-align: center;
-            border: none;
         }
 
-        .school-logo {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 50%;
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background-color: #000000;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 1rem;
+            font-size: 24px;
+            color: white;
+            font-weight: 700;
+        }
+
+        .title {
             font-size: 2rem;
-            color: var(--primary-color);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: #666666;
+        }
+
+        .form {
+            background-color: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #000000;
+            margin-bottom: 0.5rem;
+        }
+
+        .input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+            background-color: #ffffff;
+            color: #000000;
+            transition: border-color 0.2s ease;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #000000;
+        }
+
+        .input::placeholder {
+            color: #999999;
+        }
+
+        .button {
+            width: 100%;
+            padding: 0.875rem;
+            background-color: #000000;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .button:hover {
+            background-color: #333333;
+        }
+
+        .button:disabled {
+            background-color: #999999;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+            color: #666666;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e5e5;
+            border-top: 2px solid #000000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            margin-top: 2rem;
+            overflow: hidden;
+        }
+
+        .result.success {
+            border-color: #22c55e;
+        }
+
+        .result.error {
+            border-color: #ef4444;
+        }
+
+        .result-header {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .result.success .result-header {
+            background-color: #f0fdf4;
+            color: #15803d;
+        }
+
+        .result.error .result-header {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        .result-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .result-subtitle {
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+
+        .result-body {
+            padding: 2rem;
+        }
+
+        .student-info {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .student-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 0.5rem;
+        }
+
+        .student-program {
+            font-size: 1rem;
+            color: #666666;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-item {
+            background-color: #f9f9f9;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 1rem;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #666666;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #000000;
+        }
+
+        .qr-section {
+            background-color: #f9f9f9;
+            border: 2px dashed #e5e5e5;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .qr-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 0.5rem;
+        }
+
+        .qr-subtitle {
+            font-size: 0.875rem;
+            color: #666666;
+            margin-bottom: 1.5rem;
+        }
+
+        #qrcode {
+            display: inline-block;
+            margin: 1rem 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .button-secondary {
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #e5e5e5;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .button-secondary:hover {
+            background-color: #f9f9f9;
+            text-decoration: none;
+            color: #000000;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .footer a {
+            color: #666666;
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin: 0 1rem;
+        }
+
+        .footer a:hover {
+            color: #000000;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .form {
+                padding: 1.5rem;
+            }
+            
+            .result-body {
+                padding: 1.5rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
         }
 
         .card-body {
@@ -172,8 +454,8 @@
 
         #qrcode canvas,
         #qrcode img {
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+           
+            
         }
 
         .footer-links {
@@ -235,35 +517,37 @@
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="verification-card">
-            <div class="card-header">
-                <div class="school-logo">
-                    <i class="fas fa-graduation-cap"></i>
+    <div class="container">
+        <div class="header">
+            <div class="logo">W</div>
+            <h1 class="title">Weldios Institution</h1>
+            <p class="subtitle">Certificate Verification Portal</p>
+        </div>
+
+        <div class="form">
+            <form id="verificationForm" method="POST">
+                <div class="form-group">
+                    <label for="certificateNumber" class="label">Certificate Number</label>
+                    <input 
+                        type="text" 
+                        class="input" 
+                        id="certificateNumber" 
+                        name="certificate_number" 
+                        placeholder="Enter certificate number (e.g., WLD/2024/001)" 
+                        required
+                    >
                 </div>
-                <h1 class="h3 mb-0">Weldios University</h1>
-                <p class="mb-0 opacity-75">Certificate Verification Portal</p>
+                
+                <button type="submit" class="button" id="verifyBtn">
+                    Verify Certificate
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                Verifying certificate...
             </div>
-
-            <div class="card-body">
-                <form id="verificationForm" method="POST">
-                    <div class="form-floating">
-                        <input type="text" class="form-control" id="certificateNumber" name="certificate_number" 
-                               placeholder="Enter Certificate Number" required>
-                        <label for="certificateNumber">
-                            <i class="fas fa-certificate me-2"></i>Certificate Number
-                        </label>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-verify">
-                        <i class="fas fa-search me-2"></i>Verify Certificate
-                    </button>
-                </form>
-
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p class="mt-2 text-muted">Verifying certificate...</p>
-                </div>
+        </div>
 
                 <?php
                 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['certificate_number'])) {
@@ -280,25 +564,27 @@
                         if ($student) {
                             // Valid certificate
                             $profile_url = BASE_URL . 'profile.php?id=' . $student['profile_url'];
-                            echo '<div class="result-card valid-result">';
-                            echo '<div class="card-body">';
-                            echo '<div class="d-flex align-items-center mb-3">';
-                            echo '<i class="fas fa-check-circle text-success me-3" style="font-size: 2rem;"></i>';
-                            echo '<div>';
-                            echo '<h5 class="mb-1 text-success">Certificate Verified ✓</h5>';
-                            echo '<p class="mb-0 text-muted">This certificate is authentic and valid</p>';
-                            echo '</div>';
+                            echo '<div class="result success">';
+                            echo '<div class="result-header">';
+                            echo '<div class="result-icon">✓</div>';
+                            echo '<h3 class="result-title">Certificate Verified</h3>';
+                            echo '<p class="result-subtitle">This certificate is authentic and valid</p>';
                             echo '</div>';
                             
+                            echo '<div class="result-body">';
                             echo '<div class="student-info">';
-                            echo '<div class="info-item">';
-                            echo '<div class="info-label">Student Name</div>';
-                            echo '<div class="info-value">' . htmlspecialchars($student['surname'] . ', ' . $student['first_name'] . ' ' . $student['middle_name']) . '</div>';
+                            echo '<h4 class="student-name">';
+                            echo htmlspecialchars($student['first_name'] . ' ' . $student['surname']);
+                            echo '</h4>';
+                            echo '<p class="student-program">';
+                            echo htmlspecialchars($student['programme_title']);
+                            echo '</p>';
                             echo '</div>';
                             
+                            echo '<div class="info-grid">';
                             echo '<div class="info-item">';
-                            echo '<div class="info-label">Programme</div>';
-                            echo '<div class="info-value">' . htmlspecialchars($student['programme_title']) . '</div>';
+                            echo '<div class="info-label">Certificate Number</div>';
+                            echo '<div class="info-value">' . htmlspecialchars($student['certificate_number']) . '</div>';
                             echo '</div>';
                             
                             echo '<div class="info-item">';
@@ -325,15 +611,15 @@
                             echo '</div>';
                             
                             echo '<div class="qr-section">';
-                            echo '<h6 class="mb-3"><i class="fas fa-qrcode me-2"></i>Profile QR Code</h6>';
+                            echo '<h4 class="qr-title">Verification QR Code</h4>';
+                            echo '<p class="qr-subtitle">Scan to view complete certificate details</p>';
                             echo '<div id="qrcode"></div>';
-                            echo '<p class="mt-3 small text-muted">Scan this QR code to view the complete student profile</p>';
-                            echo '<div class="mt-2">';
-                            echo '<a href="' . $profile_url . '" class="btn btn-outline-primary btn-sm me-2" target="_blank">';
-                            echo '<i class="fas fa-external-link-alt me-2"></i>View Full Profile';
+                            echo '<div class="button-group">';
+                            echo '<a href="' . $profile_url . '" class="button-secondary" target="_blank">';
+                            echo 'View Full Profile';
                             echo '</a>';
-                            echo '<button class="btn btn-outline-secondary btn-sm" onclick="copyProfileUrl(\'' . $profile_url . '\')" title="Copy Profile URL">';
-                            echo '<i class="fas fa-copy me-1"></i>Copy URL';
+                            echo '<button class="button-secondary" onclick="copyProfileUrl(\'' . $profile_url . '\')" title="Copy Profile URL">';
+                            echo 'Copy URL';
                             echo '</button>';
                             echo '</div>';
                             echo '</div>';
@@ -341,90 +627,98 @@
                             echo '</div>';
                             echo '</div>';
                             
-                            // Include QR code generation with reliable library
-                            echo '<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
+                            // Clean QR code generation
                             echo '<script>';
                             echo 'document.addEventListener("DOMContentLoaded", function() {';
-                            echo '    try {';
-                            echo '        if (typeof QRCode !== "undefined") {';
-                            echo '            const qrContainer = document.getElementById("qrcode");';
-                            echo '            if (qrContainer) {';
-                            echo '                qrContainer.style.textAlign = "center";';
-                            echo '                qrContainer.style.padding = "10px";';
-                            echo '                const qr = new QRCode(qrContainer, {';
-                            echo '                    text: "' . $profile_url . '",';
-                            echo '                    width: 150,';
-                            echo '                    height: 150,';
-                            echo '                    colorDark: "#2563eb",';
-                            echo '                    colorLight: "#ffffff",';
-                            echo '                    correctLevel: QRCode.CorrectLevel.M';
-                            echo '                });';
-                            echo '                console.log("QR Code generated successfully for profile");';
+                            echo '    setTimeout(function() {';
+                            echo '        try {';
+                            echo '            if (typeof QRCode !== "undefined") {';
+                            echo '                const qrContainer = document.getElementById("qrcode");';
+                            echo '                if (qrContainer) {';
+                            echo '                    const qr = new QRCode(qrContainer, {';
+                            echo '                        text: "' . $profile_url . '",';
+                            echo '                        width: 160,';
+                            echo '                        height: 160,';
+                            echo '                        colorDark: "#000000",';
+                            echo '                        colorLight: "#ffffff",';
+                            echo '                        correctLevel: QRCode.CorrectLevel.M';
+                            echo '                    });';
+                            echo '                }';
+                            echo '            } else {';
+                            echo '                document.getElementById("qrcode").innerHTML = "<p style=\"color: #666;\">QR Code unavailable</p>";';
                             echo '            }';
-                            echo '        } else {';
-                            echo '            console.error("QRCode library not loaded");';
-                            echo '            document.getElementById("qrcode").innerHTML = "<p class=\"text-muted small\">QR Code could not be generated</p>";';
+                            echo '        } catch (error) {';
+                            echo '            console.error("QR Code generation error:", error);';
+                            echo '            document.getElementById("qrcode").innerHTML = "<p style=\"color: #666;\">QR Code generation failed</p>";';
                             echo '        }';
-                            echo '    } catch (error) {';
-                            echo '        console.error("QR Code generation error:", error);';
-                            echo '        document.getElementById("qrcode").innerHTML = "<p class=\"text-muted small\">QR Code generation failed</p>";';
-                            echo '    }';
+                            echo '    }, 500);';
                             echo '});';
                             echo '</script>';
                             
                         } else {
                             // Invalid certificate
-                            echo '<div class="result-card invalid-result">';
-                            echo '<div class="card-body text-center">';
-                            echo '<i class="fas fa-times-circle text-danger mb-3" style="font-size: 3rem;"></i>';
-                            echo '<h5 class="text-danger">Certificate Not Found</h5>';
-                            echo '<p class="text-muted">The certificate number "' . htmlspecialchars($certificate_number) . '" was not found in our database.</p>';
-                            echo '<p class="small text-muted mt-3">Please verify the certificate number and try again, or contact the institution for assistance.</p>';
+                            echo '<div class="result error">';
+                            echo '<div class="result-header">';
+                            echo '<div class="result-icon">✗</div>';
+                            echo '<h3 class="result-title">Certificate Not Found</h3>';
+                            echo '<p class="result-subtitle">This certificate could not be verified</p>';
+                            echo '</div>';
+                            echo '<div class="result-body">';
+                            echo '<p style="text-align: center; margin-bottom: 1rem; color: #666;">The certificate number "' . htmlspecialchars($certificate_number) . '" was not found in our database.</p>';
+                            echo '<p style="text-align: center; font-size: 0.875rem; color: #666;">Please verify the certificate number and try again, or contact the institution for assistance.</p>';
                             echo '</div>';
                             echo '</div>';
                         }
                         
                     } catch (Exception $e) {
-                        echo '<div class="result-card invalid-result">';
-                        echo '<div class="card-body text-center">';
-                        echo '<i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>';
-                        echo '<h5 class="text-warning">Verification Error</h5>';
-                        echo '<p class="text-muted">An error occurred while verifying the certificate. Please try again later.</p>';
+                        echo '<div class="result error">';
+                        echo '<div class="result-header">';
+                        echo '<div class="result-icon">⚠</div>';
+                        echo '<h3 class="result-title">Verification Error</h3>';
+                        echo '<p class="result-subtitle">An error occurred during verification</p>';
+                        echo '</div>';
+                        echo '<div class="result-body">';
+                        echo '<p style="text-align: center; color: #666;">An error occurred while verifying the certificate. Please try again later.</p>';
                         echo '</div>';
                         echo '</div>';
                     }
                 }
                 ?>
 
-                <div class="footer-links">
-                    <a href="admin/login.php"><i class="fas fa-user-shield me-1"></i>Admin Login</a>
-                    <a href="#"><i class="fas fa-info-circle me-1"></i>About</a>
-                    <a href="#"><i class="fas fa-envelope me-1"></i>Contact</a>
-                </div>
+        <div class="footer">
+            <a href="admin/login.php">Admin Login</a>
+            <a href="#">About</a>
+            <a href="#">Contact</a>
+        </div>
+    </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
-        document.getElementById('verificationForm').addEventListener('submit', function() {
-            document.getElementById('loading').classList.add('show');
+        // Form handling
+        document.getElementById('verificationForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('verifyBtn');
+            const loading = document.getElementById('loading');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Verifying...';
+            loading.classList.add('show');
         });
 
         // Auto-format certificate number input
         document.getElementById('certificateNumber').addEventListener('input', function(e) {
-            let value = e.target.value.toUpperCase();
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9\/]/g, '');
             e.target.value = value;
         });
 
-        // Copy URL function for profile links
+        // Copy URL function
         function copyProfileUrl(url) {
-            // Method 1: Modern Clipboard API
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(url).then(function() {
                     showCopySuccess();
                 }).catch(function(err) {
-                    console.error('Clipboard API failed: ', err);
                     fallbackCopyTextToClipboard(url);
                 });
             } else {
@@ -463,15 +757,13 @@
         function showCopySuccess() {
             const btn = event?.target?.closest('button');
             if (btn) {
-                const originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check text-success me-1"></i>Copied!';
-                btn.classList.add('btn-success');
-                btn.classList.remove('btn-outline-secondary');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.backgroundColor = '#22c55e';
                 
                 setTimeout(() => {
-                    btn.innerHTML = originalHtml;
-                    btn.classList.remove('btn-success');
-                    btn.classList.add('btn-outline-secondary');
+                    btn.textContent = originalText;
+                    btn.style.backgroundColor = '';
                 }, 2000);
             }
         }
