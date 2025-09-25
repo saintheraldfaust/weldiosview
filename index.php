@@ -39,7 +39,7 @@
         .logo {
             width: 60px;
             height: 60px;
-            background-color: #000000;
+            background-color: #2563eb;
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -53,7 +53,7 @@
         .title {
             font-size: 2rem;
             font-weight: 700;
-            color: #000000;
+            color: #2563eb;
             margin-bottom: 0.5rem;
         }
 
@@ -65,9 +65,10 @@
         .form {
             background-color: #ffffff;
             border: 1px solid #e5e5e5;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
 
         .form-group {
@@ -96,7 +97,8 @@
 
         .input:focus {
             outline: none;
-            border-color: #000000;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .input::placeholder {
@@ -106,7 +108,7 @@
         .button {
             width: 100%;
             padding: 0.875rem;
-            background-color: #000000;
+            background-color: #2563eb;
             color: #ffffff;
             border: none;
             border-radius: 6px;
@@ -118,7 +120,7 @@
         }
 
         .button:hover {
-            background-color: #333333;
+            background-color: #1d4ed8;
         }
 
         .button:disabled {
@@ -155,13 +157,14 @@
 
         .result {
             border: 1px solid #e5e5e5;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-top: 2rem;
             overflow: hidden;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
 
         .result.success {
-            border-color: #22c55e;
+            border-color: #2563eb;
         }
 
         .result.error {
@@ -174,8 +177,8 @@
         }
 
         .result.success .result-header {
-            background-color: #f0fdf4;
-            color: #15803d;
+            background-color: #eff6ff;
+            color: #2563eb;
         }
 
         .result.error .result-header {
@@ -213,7 +216,7 @@
         .student-name {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #000000;
+            color: #2563eb;
             margin-bottom: 0.5rem;
         }
 
@@ -263,7 +266,7 @@
         .qr-title {
             font-size: 1rem;
             font-weight: 600;
-            color: #000000;
+            color: #2563eb;
             margin-bottom: 0.5rem;
         }
 
@@ -373,21 +376,20 @@
         }
 
         .btn-verify {
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            background: #2563eb;
             border: none;
             padding: 1rem 2rem;
             border-radius: 12px;
             font-weight: 600;
             font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: white;
             transition: all 0.3s ease;
             width: 100%;
-            position: relative;
-            overflow: hidden;
+            cursor: pointer;
         }
 
         .btn-verify:hover {
+            background: #1d4ed8;
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
         }
@@ -553,11 +555,24 @@
                 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['certificate_number'])) {
                     require_once 'config/config.php';
                     
+                    // Helper function to safely display data
+                    function safeDisplay($value, $placeholder = 'Not available') {
+                        return htmlspecialchars(!empty($value) && $value !== '0000-00-00' ? $value : $placeholder);
+                    }
+                    
                     $certificate_number = sanitize($_POST['certificate_number']);
                     
                     try {
                         $pdo = getDBConnection();
-                        $stmt = $pdo->prepare("SELECT * FROM certificate_verification WHERE certificate_number = ?");
+                        $stmt = $pdo->prepare("
+                            SELECT 
+                                c.certificate_number, c.programme_type, c.programme_title, c.department, 
+                                c.class_of_degree, c.year_of_graduation, c.profile_url, c.issue_date, c.status as certificate_status,
+                                s.surname, s.first_name, s.middle_name, s.matriculation_number, s.email, s.phone
+                            FROM certificates c 
+                            JOIN students s ON c.student_id = s.id 
+                            WHERE c.certificate_number = ? AND c.status = 'active'
+                        ");
                         $stmt->execute([$certificate_number]);
                         $student = $stmt->fetch(PDO::FETCH_ASSOC);
                         
@@ -574,39 +589,38 @@
                             echo '<div class="result-body">';
                             echo '<div class="student-info">';
                             echo '<h4 class="student-name">';
-                            echo htmlspecialchars($student['first_name'] . ' ' . $student['surname']);
+                            $fullName = trim(($student['first_name'] ?? '') . ' ' . ($student['surname'] ?? ''));
+                            echo safeDisplay($fullName, 'Name Not Available');
                             echo '</h4>';
                             echo '<p class="student-program">';
-                            echo htmlspecialchars($student['programme_title']);
+                            echo safeDisplay($student['programme_title'] ?? '');
                             echo '</p>';
                             echo '</div>';
                             
                             echo '<div class="info-grid">';
                             echo '<div class="info-item">';
                             echo '<div class="info-label">Certificate Number</div>';
-                            echo '<div class="info-value">' . htmlspecialchars($student['certificate_number']) . '</div>';
+                            echo '<div class="info-value">' . safeDisplay($student['certificate_number'] ?? '') . '</div>';
                             echo '</div>';
                             
                             echo '<div class="info-item">';
                             echo '<div class="info-label">Department</div>';
-                            echo '<div class="info-value">' . htmlspecialchars($student['department']) . '</div>';
+                            echo '<div class="info-value">' . safeDisplay($student['department'] ?? '') . '</div>';
                             echo '</div>';
                             
-                            if (!empty($student['class_of_degree'])) {
-                                echo '<div class="info-item">';
-                                echo '<div class="info-label">Class of Degree</div>';
-                                echo '<div class="info-value">' . htmlspecialchars($student['class_of_degree']) . '</div>';
-                                echo '</div>';
-                            }
+                            echo '<div class="info-item">';
+                            echo '<div class="info-label">Class of Degree</div>';
+                            echo '<div class="info-value">' . safeDisplay($student['class_of_degree'] ?? '') . '</div>';
+                            echo '</div>';
                             
                             echo '<div class="info-item">';
                             echo '<div class="info-label">Year of Graduation</div>';
-                            echo '<div class="info-value">' . htmlspecialchars($student['year_of_graduation']) . '</div>';
+                            echo '<div class="info-value">' . safeDisplay($student['year_of_graduation'] ?? '') . '</div>';
                             echo '</div>';
                             
                             echo '<div class="info-item">';
                             echo '<div class="info-label">Matriculation Number</div>';
-                            echo '<div class="info-value">' . htmlspecialchars($student['matriculation_number']) . '</div>';
+                            echo '<div class="info-value">' . safeDisplay($student['matriculation_number'] ?? '') . '</div>';
                             echo '</div>';
                             echo '</div>';
                             

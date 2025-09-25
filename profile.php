@@ -11,7 +11,16 @@ if (empty($profile_id)) {
 
 try {
     $pdo = getDBConnection();
-    $stmt = $pdo->prepare("SELECT * FROM certificate_verification WHERE profile_url = ?");
+    $stmt = $pdo->prepare("
+        SELECT 
+            c.certificate_number, c.programme_type, c.programme_title, c.department, 
+            c.class_of_degree, c.year_of_graduation, c.profile_url, c.issue_date, c.status as certificate_status,
+            s.surname, s.first_name, s.middle_name, s.matriculation_number, s.email, s.phone,
+            s.date_of_birth, s.gender, s.nationality, s.address, s.status as student_status
+        FROM certificates c 
+        JOIN students s ON c.student_id = s.id 
+        WHERE c.profile_url = ? AND c.status = 'active'
+    ");
     $stmt->execute([$profile_id]);
     $student = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -23,6 +32,22 @@ try {
 } catch (Exception $e) {
     header('Location: ' . BASE_URL);
     exit();
+}
+
+// Helper function to safely display data
+function safeDisplay($value, $placeholder = 'Not available') {
+    return htmlspecialchars(!empty($value) && $value !== '0000-00-00' ? $value : $placeholder);
+}
+
+// Helper function to safely display dates
+function safeDisplayDate($date, $format = 'F j, Y', $placeholder = 'Not available') {
+    if (!empty($date) && $date !== '0000-00-00' && $date !== null) {
+        $timestamp = strtotime($date);
+        if ($timestamp !== false && $timestamp > 0) {
+            return htmlspecialchars(date($format, $timestamp));
+        }
+    }
+    return $placeholder;
 }
 ?>
 <!DOCTYPE html>
@@ -67,7 +92,7 @@ try {
         .header h1 {
             font-size: 2rem;
             font-weight: 700;
-            color: #000000;
+            color: #2563eb;
             margin-bottom: 0.5rem;
         }
 
@@ -85,23 +110,27 @@ try {
             align-items: center;
             gap: 0.5rem;
             text-decoration: none;
-            color: #000000;
+            color: #2563eb;
             font-weight: 500;
             padding: 0.75rem 1rem;
-            border: 1px solid #e5e5e5;
+            border: 1px solid #2563eb;
             background: #ffffff;
+            border-radius: 6px;
             transition: all 0.2s ease;
         }
 
         .back-button:hover {
-            background: #f5f5f5;
+            background: #2563eb;
+            color: #ffffff;
         }
 
         .profile-container {
             background: #ffffff;
             border: 1px solid #e5e5e5;
+            border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
 
         .profile-header {
@@ -114,7 +143,7 @@ try {
         .profile-avatar {
             width: 100px;
             height: 100px;
-            background: #000000;
+            background: #2563eb;
             color: #ffffff;
             display: flex;
             align-items: center;
@@ -122,12 +151,13 @@ try {
             font-size: 2rem;
             font-weight: 700;
             margin: 0 auto 1rem auto;
+            border-radius: 50%;
         }
 
         .profile-name {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #000000;
+            color: #2563eb;
             margin-bottom: 0.5rem;
         }
 
@@ -206,34 +236,38 @@ try {
         }
 
         .btn-primary {
-            background: #000000;
+            background: #2563eb;
             color: #ffffff;
+            border-radius: 6px;
         }
 
         .btn-primary:hover {
-            background: #333333;
+            background: #1d4ed8;
             color: #ffffff;
             text-decoration: none;
         }
 
         .btn-secondary {
             background: #ffffff;
-            color: #000000;
-            border: 1px solid #e5e5e5;
+            color: #2563eb;
+            border: 1px solid #2563eb;
+            border-radius: 6px;
         }
 
         .btn-secondary:hover {
-            background: #f5f5f5;
+            background: #2563eb;
+            color: #ffffff;
             text-decoration: none;
-            color: #000000;
         }
 
         .qr-section {
             background: #ffffff;
             border: 1px solid #e5e5e5;
+            border-radius: 12px;
             padding: 2rem;
             text-align: center;
             margin: 2rem 0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
 
         .qr-code-container {
@@ -247,14 +281,16 @@ try {
         .certificate-section {
             background: #ffffff;
             border: 1px solid #e5e5e5;
+            border-radius: 12px;
             padding: 2rem;
             margin: 2rem 0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
 
         .section-title {
             font-size: 1.25rem;
             font-weight: 700;
-            color: #000000;
+            color: #2563eb;
             margin-bottom: 1.5rem;
             text-align: center;
         }
@@ -318,128 +354,115 @@ try {
             <p>Certificate verification details</p>
         </div>
 
-        <!-- Profile Header -->
-        <div class="profile-header">
-            <div class="profile-banner"></div>
-            <div class="profile-info">
+        <div class="profile-container">
+            <div class="profile-header">
                 <div class="profile-avatar">
-                    <?php echo strtoupper(substr($student['first_name'], 0, 1) . substr($student['surname'], 0, 1)); ?>
+                    <?php 
+                    $firstName = $student['first_name'] ?? '';
+                    $surname = $student['surname'] ?? '';
+                    $initials = strtoupper((strlen($firstName) > 0 ? substr($firstName, 0, 1) : '') . (strlen($surname) > 0 ? substr($surname, 0, 1) : ''));
+                    echo $initials ?: 'N/A'; 
+                    ?>
                 </div>
-                <div>
-                    <h1 class="h1"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['surname']); ?></h1>
-                    <p class="text-muted">Student at Weldios Institution</p>
-                    <div style="margin: 1rem 0;">
-                        <span class="status-badge status-active">
-                            <i data-lucide="check-circle"></i>
-                            Verified Certificate
-                        </span>
-                    </div>
+                <div class="profile-name"><?php 
+                    $fullName = trim(($student['first_name'] ?? '') . ' ' . ($student['surname'] ?? ''));
+                    echo safeDisplay($fullName, 'Name Not Available'); 
+                ?></div>
+                <div class="profile-id">Student ID: <?php echo safeDisplay($student['matriculation_number'] ?? '', 'ID Not Available'); ?></div>
+                <div style="margin-top: 1rem;">
+                    <span class="status-badge status-active">Verified Certificate</span>
+                </div>
+            </div>
+
+            <div class="section-title">Personal Information</div>
+            <div class="data-grid">
+                <div class="data-item">
+                    <div class="data-label">Full Name</div>
+                    <div class="data-value"><?php 
+                        $fullName = trim(($student['first_name'] ?? '') . ' ' . ($student['middle_name'] ?? '') . ' ' . ($student['surname'] ?? ''));
+                        echo safeDisplay($fullName); 
+                    ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Date of Birth</div>
+                    <div class="data-value"><?php echo safeDisplayDate($student['date_of_birth'] ?? null); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Gender</div>
+                    <div class="data-value"><?php echo safeDisplay(ucfirst($student['gender'] ?? '')); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Nationality</div>
+                    <div class="data-value"><?php echo safeDisplay($student['nationality'] ?? ''); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Email</div>
+                    <div class="data-value"><?php echo safeDisplay($student['email'] ?? ''); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Phone</div>
+                    <div class="data-value"><?php echo safeDisplay($student['phone'] ?? ''); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Matriculation Number</div>
+                    <div class="data-value"><?php echo safeDisplay($student['matriculation_number'] ?? ''); ?></div>
                 </div>
             </div>
         </div>
 
-        <!-- Personal Information -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="h3" style="margin: 0; color: white;">
-                    <i data-lucide="user" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
-                    Personal Information
-                </h2>
-            </div>
-            <div class="card-content">
-                <div class="data-grid">
-                    <div class="data-item">
-                        <div class="data-label">Full Name</div>
-                        <div class="data-value"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['other_names'] . ' ' . $student['surname']); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Date of Birth</div>
-                        <div class="data-value"><?php echo htmlspecialchars(date('F j, Y', strtotime($student['date_of_birth']))); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Gender</div>
-                        <div class="data-value"><?php echo htmlspecialchars(ucfirst($student['gender'])); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Nationality</div>
-                        <div class="data-value"><?php echo htmlspecialchars($student['nationality']); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">State of Origin</div>
-                        <div class="data-value"><?php echo htmlspecialchars($student['state_of_origin']); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Matriculation Number</div>
-                        <div class="data-value"><?php echo htmlspecialchars($student['matriculation_number']); ?></div>
-                    </div>
+        <div class="certificate-section">
+            <div class="section-title">Academic Credentials</div>
+
+            <div class="data-grid">
+                <div class="data-item">
+                    <div class="data-label">Certificate Number</div>
+                    <div class="data-value"><?php echo safeDisplay($student['certificate_number'] ?? ''); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Programme Type</div>
+                    <div class="data-value"><?php echo safeDisplay(ucwords($student['programme_type'] ?? '')); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Programme Title</div>
+                    <div class="data-value"><?php echo safeDisplay($student['programme_title'] ?? ''); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Department</div>
+                    <div class="data-value"><?php echo safeDisplay($student['department'] ?? ''); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Class of Degree</div>
+                    <div class="data-value"><?php echo safeDisplay($student['class_of_degree'] ?? ''); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Year of Graduation</div>
+                    <div class="data-value"><?php echo safeDisplay($student['year_of_graduation'] ?? ''); ?></div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Issue Date</div>
+                    <div class="data-value"><?php echo safeDisplayDate($student['issue_date'] ?? null); ?></div>
                 </div>
             </div>
         </div>
 
-        <!-- Academic Information -->
-        <div class="card" style="margin-top: 2rem;">
-            <div class="card-header">
-                <h2 class="h3" style="margin: 0; color: white;">
-                    <i data-lucide="graduation-cap" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
-                    Academic Credentials
-                </h2>
-            </div>
-            <div class="card-content">
-                <div class="data-grid">
-                    <div class="data-item">
-                        <div class="data-label">Certificate Number</div>
-                        <div class="data-value"><?php echo htmlspecialchars($student['certificate_number']); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Programme Type</div>
-                        <div class="data-value"><?php echo htmlspecialchars(ucwords($student['programme_type'])); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Programme Title</div>
-                        <div class="data-value"><?php echo htmlspecialchars($student['programme_title']); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Department</div>
-                        <div class="data-value"><?php echo htmlspecialchars($student['department']); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Class of Degree</div>
-                        <div class="data-value"><?php echo htmlspecialchars($student['class_of_degree']); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Year of Graduation</div>
-                        <div class="data-value"><?php echo htmlspecialchars($student['year_of_graduation']); ?></div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-label">Issue Date</div>
-                        <div class="data-value"><?php echo htmlspecialchars(date('F j, Y', strtotime($student['issue_date']))); ?></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- QR Code Section -->
-        <div class="qr-section">
-            <h3 class="h3">Certificate Verification QR Code</h3>
-            <p class="text-muted">Scan this QR code to verify this certificate</p>
+        <!-- <div class="qr-section">
+            <div class="section-title">Certificate Verification QR Code</div>
+            <p style="color: #666666; margin-bottom: 1.5rem;">Scan this QR code to verify this certificate</p>
             <div class="qr-code-container">
                 <div id="qrcode"></div>
             </div>
-            <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                 <button onclick="copyProfileUrl('<?php echo BASE_URL . 'profile.php?id=' . $student['profile_url']; ?>')" class="btn btn-secondary">
-                    <i data-lucide="copy"></i>
                     Copy Profile URL
                 </button>
                 <button onclick="window.print()" class="btn btn-primary">
-                    <i data-lucide="printer"></i>
                     Print Certificate
                 </button>
             </div>
-        </div>
+        </div> -->
 
-        <!-- Footer -->
-        <div style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 1px solid hsl(var(--border));">
-            <p class="text-muted text-sm">
+        <div style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 1px solid #e5e5e5;">
+            <p style="color: #666666; font-size: 0.9rem;">
                 This certificate has been digitally verified by Weldios Institution<br>
                 Generated on <?php echo date('F j, Y \a\t g:i A'); ?>
             </p>
