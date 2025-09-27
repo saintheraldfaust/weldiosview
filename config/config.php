@@ -9,8 +9,24 @@ define('DB_PASSWORD', '');
 define('DB_NAME', 'weldios_portal');
 
 // Application configuration
-define('APP_NAME', 'Weldios Verification Portal');
-define('BASE_URL', 'http://localhost/weldios/');
+define('APP_NAME', 'weldios university Verification Portal');
+
+// Dynamic BASE_URL detection
+function getBaseUrl() {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'];
+    $path = dirname($_SERVER['SCRIPT_NAME']);
+    
+    // Remove known subdirectories from the path to find the true base
+    $path = str_replace(['/config', '/admin'], '', $path);
+    
+    // Ensure path ends with a single slash
+    $path = rtrim($path, '/') . '/';
+    
+    return $protocol . $host . $path;
+}
+
+define('BASE_URL', getBaseUrl());
 define('ADMIN_URL', BASE_URL . 'admin/');
 
 // Connect to database

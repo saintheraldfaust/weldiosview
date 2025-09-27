@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate Verification - Weldios</title>
+    <title>Certificate Verification - weldios university</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -37,17 +37,9 @@
         }
 
         .logo {
-            width: 60px;
-            height: 60px;
-            background-color: #2563eb;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 24px;
-            color: white;
-            font-weight: 700;
+            width: 80px;
+            height: auto;
+            margin: 0 auto 1.5rem;
         }
 
         .title {
@@ -521,8 +513,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">W</div>
-            <h1 class="title">Weldios Institution</h1>
+            <img src="assets/weldioslogo.png" alt="weldios university Logo" class="logo">
+            <h1 class="title">weldios university</h1>
             <p class="subtitle">Certificate Verification Portal</p>
         </div>
 
@@ -699,11 +691,11 @@
                 }
                 ?>
 
-        <div class="footer">
+        <!-- <div class="footer">
             <a href="admin/login.php">Admin Login</a>
             <a href="#">About</a>
             <a href="#">Contact</a>
-        </div>
+        </div> -->
     </div>
             </div>
         </div>

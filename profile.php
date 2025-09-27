@@ -14,7 +14,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT 
             c.certificate_number, c.programme_type, c.programme_title, c.department, 
-            c.class_of_degree, c.year_of_graduation, c.profile_url, c.issue_date, c.status as certificate_status,
+            c.class_of_degree, c.year_of_graduation, c.profile_url, c.issue_date, c.status as certificate_status, c.file_path, c.image_path,
             s.surname, s.first_name, s.middle_name, s.matriculation_number, s.email, s.phone,
             s.date_of_birth, s.gender, s.nationality, s.address, s.status as student_status
         FROM certificates c 
@@ -143,15 +143,15 @@ function safeDisplayDate($date, $format = 'F j, Y', $placeholder = 'Not availabl
         .profile-avatar {
             width: 100px;
             height: 100px;
-            background: #2563eb;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
             margin: 0 auto 1rem auto;
             border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .profile-name {
@@ -320,6 +320,28 @@ function safeDisplayDate($date, $format = 'F j, Y', $placeholder = 'Not availabl
             color: #666666;
         }
 
+        .certificate-image-section {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .certificate-image-container {
+            width: 100%;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .certificate-image-container img {
+            width: 100%;
+            display: block;
+            pointer-events: none; /* Disables mouse events like click and drag */
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -357,12 +379,7 @@ function safeDisplayDate($date, $format = 'F j, Y', $placeholder = 'Not availabl
         <div class="profile-container">
             <div class="profile-header">
                 <div class="profile-avatar">
-                    <?php 
-                    $firstName = $student['first_name'] ?? '';
-                    $surname = $student['surname'] ?? '';
-                    $initials = strtoupper((strlen($firstName) > 0 ? substr($firstName, 0, 1) : '') . (strlen($surname) > 0 ? substr($surname, 0, 1) : ''));
-                    echo $initials ?: 'N/A'; 
-                    ?>
+                    <img src="assets/weldioslogo.png" alt="weldios university Logo">
                 </div>
                 <div class="profile-name"><?php 
                     $fullName = trim(($student['first_name'] ?? '') . ' ' . ($student['surname'] ?? ''));
@@ -445,7 +462,16 @@ function safeDisplayDate($date, $format = 'F j, Y', $placeholder = 'Not availabl
             </div>
         </div>
 
-        <!-- <div class="qr-section">
+        <?php if (!empty($student['image_path'])): ?>
+        <div class="certificate-image-section">
+            <div class="section-title">Certificate Image</div>
+            <div class="certificate-image-container">
+                <img src="<?php echo BASE_URL . substr($student['image_path'], 3); ?>" alt="Certificate Image">
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <div class="qr-section">
             <div class="section-title">Certificate Verification QR Code</div>
             <p style="color: #666666; margin-bottom: 1.5rem;">Scan this QR code to verify this certificate</p>
             <div class="qr-code-container">
@@ -459,11 +485,11 @@ function safeDisplayDate($date, $format = 'F j, Y', $placeholder = 'Not availabl
                     Print Certificate
                 </button>
             </div>
-        </div> -->
+        </div>
 
         <div style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 1px solid #e5e5e5;">
             <p style="color: #666666; font-size: 0.9rem;">
-                This certificate has been digitally verified by Weldios Institution<br>
+                This certificate has been digitally verified by weldios university<br>
                 Generated on <?php echo date('F j, Y \a\t g:i A'); ?>
             </p>
         </div>

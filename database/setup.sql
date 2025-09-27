@@ -1,4 +1,4 @@
--- Weldios Result Verification Portal Database Setup
+-- weldios university Result Verification Portal Database Setup
 
 CREATE DATABASE IF NOT EXISTS weldios_portal;
 USE weldios_portal;
@@ -32,7 +32,7 @@ CREATE TABLE admin_users (
 
 -- Insert default admin user (password: admin123)
 INSERT INTO admin_users (username, password, email) VALUES 
-('admin', '$2y$10$x2ddkmTe0H6olxcQIL18OuNqObdFaLQQVmIYPgJ0ifP8iigM862x2', 'admin@weldios.edu');
+('admin', '$2y$10$x2ddkmTe0H6olxcQIL18OuNqObdFaLQQVmIYPgJ0ifP8iigM862x2', 'admin@weldios.university');
 
 -- Sample students data
 INSERT INTO students (certificate_number, surname, first_name, middle_name, programme_type, programme_title, department, class_of_degree, year_of_graduation, matriculation_number, profile_url) VALUES

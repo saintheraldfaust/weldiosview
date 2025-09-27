@@ -26,8 +26,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $issue_date = sanitize($_POST['issue_date']);
                     $profile_url = generateProfileUrl();
                     
-                    $stmt = $pdo->prepare("INSERT INTO certificates (student_id, certificate_number, programme_type, programme_title, department, class_of_degree, year_of_graduation, issue_date, profile_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
-                    $stmt->execute([$student_id, $certificate_number, $programme_type, $programme_title, $department, $class_of_degree, $year_of_graduation, $issue_date, $profile_url]);
+                    // Handle file upload
+                    $file_path = null;
+                    if (isset($_FILES['certificate_file']) && $_FILES['certificate_file']['error'] == 0) {
+                        $upload_dir = '../uploads/certificates/';
+                        $file_name = uniqid() . '_' . basename($_FILES['certificate_file']['name']);
+                        $file_path = $upload_dir . $file_name;
+                        if (!move_uploaded_file($_FILES['certificate_file']['tmp_name'], $file_path)) {
+                            throw new Exception("Failed to upload file.");
+                        }
+                    }
+
+                    // Handle image upload
+                    $image_path = null;
+                    if (isset($_FILES['certificate_image']) && $_FILES['certificate_image']['error'] == 0) {
+                        $upload_dir_image = '../uploads/certificate_images/';
+                        $image_name = uniqid() . '_' . basename($_FILES['certificate_image']['name']);
+                        $image_path = $upload_dir_image . $image_name;
+                        if (!move_uploaded_file($_FILES['certificate_image']['tmp_name'], $image_path)) {
+                            throw new Exception("Failed to upload certificate image.");
+                        }
+                    }
+
+                    $stmt = $pdo->prepare("INSERT INTO certificates (student_id, certificate_number, programme_type, programme_title, department, class_of_degree, year_of_graduation, issue_date, profile_url, file_path, image_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
+                    $stmt->execute([$student_id, $certificate_number, $programme_type, $programme_title, $department, $class_of_degree, $year_of_graduation, $issue_date, $profile_url, $file_path, $image_path]);
                     
                     $profile_full_url = BASE_URL . 'profile.php?id=' . $profile_url;
                     $message = 'Certificate created successfully! Profile URL: ' . $profile_full_url;
@@ -135,7 +157,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificates Management - Weldios Portal</title>
+    <title>Certificates Management - weldios university Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -436,7 +458,7 @@ try {
             <div class="sidebar-logo">
                 <i class="fas fa-graduation-cap"></i>
             </div>
-            <h5 class="mb-0">Weldios Admin</h5>
+            <h5 class="mb-0">weldios university Admin</h5>
             <small class="opacity-75">Certificate Management</small>
         </div>
         
@@ -674,6 +696,12 @@ try {
                                         onclick="deleteCertificate(<?php echo $certificate['id']; ?>, '<?php echo htmlspecialchars($certificate['certificate_number']); ?>')" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                <?php if (!empty($certificate['file_path'])): ?>
+                                    <a href="<?php echo BASE_URL . 'admin/' . substr($certificate['file_path'], 3); ?>" 
+                                       class="btn btn-outline-success btn-sm" target="_blank" title="View Certificate PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -703,7 +731,7 @@ try {
                     <h5 class="modal-title">Create New Certificate</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="create_certificate">
                     <div class="modal-body p-4">
                         <div class="row">
@@ -773,11 +801,16 @@ try {
                             </div>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="certificate_file" class="form-label">Certificate PDF (Optional)</label>
+                            <input class="form-control" type="file" id="certificate_file" name="certificate_file" accept=".pdf">
+                        </div>
+
                         <!-- Certificate Preview -->
                         <div class="certificate-preview" id="certificatePreview" style="display: none;">
                             <h6 class="text-center mb-3"><i class="fas fa-eye me-2"></i>Certificate Preview</h6>
                             <div class="text-center">
-                                <h5 class="text-primary mb-3">Weldios University</h5>
+                                <h5 class="text-primary mb-3">weldios university</h5>
                                 <p class="mb-2">This is to certify that</p>
                                 <h4 class="text-dark mb-3" id="previewStudentName">Student Name</h4>
                                 <p class="mb-2">has successfully completed the programme of study for</p>
@@ -1159,7 +1192,7 @@ try {
         }
         
         function testQRGeneration() {
-            const testUrl = 'https://weldios.school/test';
+            const testUrl = 'https://weldios.university/test';
             console.log('Testing QR generation with:', testUrl);
             
             const container = document.getElementById('qrCodeContainer');

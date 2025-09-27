@@ -1,6 +1,6 @@
-# Weldios Certificate Verification Portal
+# weldios university Certificate Verification Portal
 
-A modern, secure certificate verification system for Weldios University built with PHP and MySQL.
+A modern, secure certificate verification system for weldios university built with PHP and MySQL.
 
 ## Features
 
@@ -199,9 +199,9 @@ For technical support or questions, please contact the development team.
 
 ## License
 
-This project is developed for Weldios University. All rights reserved.
+This project is developed for weldios university. All rights reserved.
 
 ---
 
-**Weldios University Certificate Verification Portal**  
+**weldios university Certificate Verification Portal**  
 Modern, Secure, and User-Friendly

@@ -104,7 +104,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Students Management - Weldios Portal</title>
+    <title>Students Management - weldios university Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -362,7 +362,7 @@ try {
             <div class="sidebar-logo">
                 <i class="fas fa-graduation-cap"></i>
             </div>
-            <h5 class="mb-0">Weldios Admin</h5>
+            <h5 class="mb-0">weldios university Admin</h5>
             <small class="opacity-75">Student Management</small>
         </div>
         
