@@ -31,10 +31,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (isset($_FILES['certificate_file']) && $_FILES['certificate_file']['error'] == 0) {
                         $upload_dir = '../uploads/certificates/';
                         $file_name = uniqid() . '_' . basename($_FILES['certificate_file']['name']);
-                        $file_path = $upload_dir . $file_name;
-                        if (!move_uploaded_file($_FILES['certificate_file']['tmp_name'], $file_path)) {
+                        $full_path = $upload_dir . $file_name;
+                        if (!move_uploaded_file($_FILES['certificate_file']['tmp_name'], $full_path)) {
                             throw new Exception("Failed to upload file.");
                         }
+                        // Store path relative to root directory (without ../)
+                        $file_path = 'uploads/certificates/' . $file_name;
                     }
 
                     // Handle image upload
@@ -42,10 +44,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (isset($_FILES['certificate_image']) && $_FILES['certificate_image']['error'] == 0) {
                         $upload_dir_image = '../uploads/certificate_images/';
                         $image_name = uniqid() . '_' . basename($_FILES['certificate_image']['name']);
-                        $image_path = $upload_dir_image . $image_name;
-                        if (!move_uploaded_file($_FILES['certificate_image']['tmp_name'], $image_path)) {
+                        $full_path_image = $upload_dir_image . $image_name;
+                        if (!move_uploaded_file($_FILES['certificate_image']['tmp_name'], $full_path_image)) {
                             throw new Exception("Failed to upload certificate image.");
                         }
+                        // Store path relative to root directory (without ../)
+                        $image_path = 'uploads/certificate_images/' . $image_name;
                     }
 
                     $stmt = $pdo->prepare("INSERT INTO certificates (student_id, certificate_number, programme_type, programme_title, department, class_of_degree, year_of_graduation, issue_date, profile_url, file_path, image_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
@@ -86,6 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Get filter parameters
 $student_filter = isset($_GET['student_id']) ? (int)$_GET['student_id'] : 0;
 $status_filter = isset($_GET['status']) ? sanitize($_GET['status']) : '';
+$search_filter = isset($_GET['search']) ? sanitize($_GET['search']) : '';
+$show_without_certs = isset($_GET['show_without_certs']) ? (bool)$_GET['show_without_certs'] : false;
 
 // Get all certificates with student information
 try {
@@ -104,24 +110,51 @@ try {
         $params[] = $status_filter;
     }
     
-    $stmt = $pdo->prepare("
-        SELECT c.*, 
-               s.surname, s.first_name, s.middle_name, s.matriculation_number, s.email
-        FROM certificates c 
-        JOIN students s ON c.student_id = s.id 
-        $whereClause
-        ORDER BY c.created_at DESC
-    ");
-    $stmt->execute($params);
-    $certificates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($search_filter)) {
+        $whereClause .= " AND (s.surname LIKE ? OR s.first_name LIKE ? OR c.certificate_number LIKE ? OR s.matriculation_number LIKE ? OR s.registration_number LIKE ?)";
+        $search_param = '%' . $search_filter . '%';
+        $params = array_merge($params, [$search_param, $search_param, $search_param, $search_param, $search_param]);
+    }
+    
+    if ($show_without_certs) {
+        // Show students without certificates instead
+        $search_clause = "";
+        $search_params = [];
+        if (!empty($search_filter)) {
+            $search_clause = " AND (s.surname LIKE ? OR s.first_name LIKE ? OR s.matriculation_number LIKE ? OR s.registration_number LIKE ?)";
+            $search_param = '%' . $search_filter . '%';
+            $search_params = [$search_param, $search_param, $search_param, $search_param];
+        }
+        
+        $stmt = $pdo->prepare("
+            SELECT s.id, s.surname, s.first_name, s.middle_name, s.matriculation_number, s.registration_number, s.email, s.created_at
+            FROM students s 
+            LEFT JOIN certificates c ON s.id = c.student_id 
+            WHERE c.id IS NULL $search_clause
+            ORDER BY s.surname, s.first_name
+        ");
+        $stmt->execute($search_params);
+        $certificates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT c.*, 
+                   s.surname, s.first_name, s.middle_name, s.matriculation_number, s.registration_number, s.email
+            FROM certificates c 
+            JOIN students s ON c.student_id = s.id 
+            $whereClause
+            ORDER BY c.created_at DESC
+        ");
+        $stmt->execute($params);
+        $certificates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     
     // Get all students for dropdown
-    $stmt = $pdo->query("SELECT id, surname, first_name, middle_name, matriculation_number FROM students ORDER BY surname, first_name");
+    $stmt = $pdo->query("SELECT id, surname, first_name, middle_name, matriculation_number, registration_number FROM students ORDER BY surname, first_name");
     $all_students = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Get students without certificates
     $stmt = $pdo->query("
-        SELECT s.id, s.surname, s.first_name, s.middle_name, s.matriculation_number 
+        SELECT s.id, s.surname, s.first_name, s.middle_name, s.matriculation_number, s.registration_number 
         FROM students s 
         LEFT JOIN certificates c ON s.id = c.student_id 
         WHERE c.id IS NULL 
@@ -150,6 +183,16 @@ try {
     $active_certificates = 0;
     $revoked_certificates = 0;
     $certificates_this_year = 0;
+}
+
+// Helper function to get student display ID (matriculation or registration number)
+function getStudentDisplayId($student) {
+    if (!empty($student['matriculation_number'])) {
+        return $student['matriculation_number'];
+    } elseif (!empty($student['registration_number'])) {
+        return $student['registration_number'];
+    }
+    return 'No ID';
 }
 ?>
 <!DOCTYPE html>
@@ -587,11 +630,15 @@ try {
             <div class="filters-bar">
                 <form method="GET" class="d-flex gap-3 align-items-center flex-wrap">
                     <div>
+                        <input type="text" name="search" class="form-control form-control-sm" placeholder="Search students, cert numbers..." 
+                               value="<?php echo htmlspecialchars($search_filter); ?>" style="width: 250px;">
+                    </div>
+                    <div>
                         <select name="student_id" class="form-select form-select-sm" onchange="this.form.submit()">
                             <option value="">All Students</option>
                             <?php foreach ($all_students as $student): ?>
                                 <option value="<?php echo $student['id']; ?>" <?php echo $student_filter == $student['id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($student['surname'] . ', ' . $student['first_name'] . ' (' . $student['matriculation_number'] . ')'); ?>
+                                    <?php echo htmlspecialchars($student['surname'] . ', ' . $student['first_name'] . ' (' . getStudentDisplayId($student) . ')'); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -604,7 +651,21 @@ try {
                             <option value="suspended" <?php echo $status_filter === 'suspended' ? 'selected' : ''; ?>>Suspended</option>
                         </select>
                     </div>
-                    <?php if ($student_filter > 0 || !empty($status_filter)): ?>
+                    <div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="show_without_certs" id="showWithoutCerts" 
+                                   value="1" <?php echo $show_without_certs ? 'checked' : ''; ?> onchange="this.form.submit()">
+                            <label class="form-check-label" for="showWithoutCerts">
+                                Students without certificates
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search me-1"></i>Search
+                        </button>
+                    </div>
+                    <?php if ($student_filter > 0 || !empty($status_filter) || !empty($search_filter) || $show_without_certs): ?>
                         <a href="certificates.php" class="btn btn-outline-secondary btn-sm">
                             <i class="fas fa-times me-1"></i>Clear Filters
                         </a>
@@ -616,30 +677,59 @@ try {
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Certificate #</th>
-                            <th>Student</th>
-                            <th>Programme</th>
-                            <th>Department</th>
-                            <th>Year</th>
-                            <th>Status</th>
-                            <th>Profile URL</th>
-                            <th>Issue Date</th>
-                            <th>Actions</th>
+                            <?php if ($show_without_certs): ?>
+                                <th>Student Name</th>
+                                <th>Student ID</th>
+                                <th>Email</th>
+                                <th>Registered</th>
+                                <th>Actions</th>
+                            <?php else: ?>
+                                <th>Certificate #</th>
+                                <th>Student</th>
+                                <th>Programme</th>
+                                <th>Department</th>
+                                <th>Year</th>
+                                <th>Status</th>
+                                <th>Profile URL</th>
+                                <th>Issue Date</th>
+                                <th>Actions</th>
+                            <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($certificates as $certificate): ?>
                         <tr>
-                            <td>
-                                <strong class="text-primary"><?php echo htmlspecialchars($certificate['certificate_number']); ?></strong>
-                            </td>
-                            <td>
-                                <div>
+                            <?php if ($show_without_certs): ?>
+                                <td>
                                     <strong><?php echo htmlspecialchars($certificate['surname'] . ', ' . $certificate['first_name']); ?></strong>
-                                    <br>
-                                    <small class="text-muted"><?php echo htmlspecialchars($certificate['matriculation_number']); ?></small>
-                                </div>
-                            </td>
+                                </td>
+                                <td>
+                                    <small class="text-muted"><?php echo htmlspecialchars(getStudentDisplayId($certificate)); ?></small>
+                                </td>
+                                <td>
+                                    <?php echo htmlspecialchars($certificate['email'] ?? 'N/A'); ?>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        <?php echo date('M j, Y', strtotime($certificate['created_at'])); ?>
+                                    </small>
+                                </td>
+                                <td>
+                                    <button class="btn btn-success btn-sm" onclick="createCertificateForStudent(<?php echo $certificate['id']; ?>, '<?php echo htmlspecialchars($certificate['first_name'] . ' ' . $certificate['surname']); ?>')">
+                                        <i class="fas fa-certificate"></i> Create Certificate
+                                    </button>
+                                </td>
+                            <?php else: ?>
+                                <td>
+                                    <strong class="text-primary"><?php echo htmlspecialchars($certificate['certificate_number']); ?></strong>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong><?php echo htmlspecialchars($certificate['surname'] . ', ' . $certificate['first_name']); ?></strong>
+                                        <br>
+                                        <small class="text-muted"><?php echo htmlspecialchars(getStudentDisplayId($certificate)); ?></small>
+                                    </div>
+                                </td>
                             <td>
                                 <div>
                                     <span class="badge badge-<?php echo $certificate['programme_type']; ?>">
@@ -670,11 +760,6 @@ try {
                                                 title="Copy Profile URL">
                                             <i class="fas fa-copy"></i>
                                         </button>
-                                        <button class="btn btn-outline-info btn-xs" 
-                                                onclick="showQRCode('<?php echo $profile_url; ?>', '<?php echo htmlspecialchars($certificate['certificate_number']); ?>')" 
-                                                title="Generate QR Code">
-                                            <i class="fas fa-qrcode"></i>
-                                        </button>
                                     </div>
                                 </div>
                             </td>
@@ -697,22 +782,28 @@ try {
                                     <i class="fas fa-trash"></i>
                                 </button>
                                 <?php if (!empty($certificate['file_path'])): ?>
-                                    <a href="<?php echo BASE_URL . 'admin/' . substr($certificate['file_path'], 3); ?>" 
+                                    <a href="<?php echo BASE_URL . $certificate['file_path']; ?>" 
                                        class="btn btn-outline-success btn-sm" target="_blank" title="View Certificate PDF">
                                         <i class="fas fa-file-pdf"></i>
                                     </a>
                                 <?php endif; ?>
                             </td>
+                            <?php endif; ?>
                         </tr>
                         <?php endforeach; ?>
                         
                         <?php if (empty($certificates)): ?>
                         <tr>
-                            <td colspan="9" class="text-center py-5">
-                                <i class="fas fa-certificate text-muted mb-3" style="font-size: 3rem;"></i>
-                                <p class="text-muted">No certificates found. Create your first certificate to get started.</p>
-                                <?php if (count($students_without_certificates) > 0): ?>
-                                    <p class="text-muted">You have <?php echo count($students_without_certificates); ?> students waiting for certificates.</p>
+                            <td colspan="<?php echo $show_without_certs ? '5' : '9'; ?>" class="text-center py-5">
+                                <?php if ($show_without_certs): ?>
+                                    <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
+                                    <p class="text-muted">All students have certificates! Great job.</p>
+                                <?php else: ?>
+                                    <i class="fas fa-certificate text-muted mb-3" style="font-size: 3rem;"></i>
+                                    <p class="text-muted">No certificates found. Create your first certificate to get started.</p>
+                                    <?php if (count($students_without_certificates) > 0): ?>
+                                        <p class="text-muted">You have <?php echo count($students_without_certificates); ?> students waiting for certificates.</p>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -742,8 +833,8 @@ try {
                                     <?php foreach ($all_students as $student): ?>
                                         <option value="<?php echo $student['id']; ?>" 
                                                 data-name="<?php echo htmlspecialchars($student['surname'] . ', ' . $student['first_name'] . ' ' . $student['middle_name']); ?>"
-                                                data-matric="<?php echo htmlspecialchars($student['matriculation_number']); ?>">
-                                            <?php echo htmlspecialchars($student['surname'] . ', ' . $student['first_name'] . ' (' . $student['matriculation_number'] . ')'); ?>
+                                                data-id="<?php echo htmlspecialchars(getStudentDisplayId($student)); ?>">
+                                            <?php echo htmlspecialchars($student['surname'] . ', ' . $student['first_name'] . ' (' . getStudentDisplayId($student) . ')'); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -801,9 +892,15 @@ try {
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="certificate_file" class="form-label">Certificate PDF (Optional)</label>
-                            <input class="form-control" type="file" id="certificate_file" name="certificate_file" accept=".pdf">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="certificate_file" class="form-label">Certificate PDF (Optional)</label>
+                                <input class="form-control" type="file" id="certificate_file" name="certificate_file" accept=".pdf">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="certificate_image" class="form-label">Certificate Image (Optional)</label>
+                                <input class="form-control" type="file" id="certificate_image" name="certificate_image" accept="image/png, image/jpeg">
+                            </div>
                         </div>
 
                         <!-- Certificate Preview -->
@@ -896,46 +993,10 @@ try {
         </div>
     </div>
 
-    <!-- QR Code Modal -->
-    <div class="modal fade qr-modal" id="qrCodeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Certificate Profile QR Code</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <strong>Certificate:</strong> <span id="qrCertificateNumber"></span>
-                    </div>
-                    <div id="qrCodeContainer" class="text-center mb-3"></div>
-                    <div class="profile-url-display mb-3" id="qrProfileUrl"></div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-sm" onclick="copyQRUrl()">
-                            <i class="fas fa-copy me-1"></i>Copy URL
-                        </button>
-                        <button class="btn btn-outline-info btn-sm" onclick="testQRGeneration()">
-                            <i class="fas fa-test-tube me-1"></i>Test QR
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
-        let currentQRUrl = '';
-        
-        // Check if QRCode is available when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof QRCode !== 'undefined') {
-                console.log('QRCode library loaded successfully');
-            } else {
-                console.error('QRCode library failed to load');
-            }
-        });
 
         function updateCertificatePreview() {
             const studentSelect = document.getElementById('studentSelect');
@@ -964,6 +1025,15 @@ try {
             } else {
                 preview.style.display = 'none';
             }
+        }
+
+        function createCertificateForStudent(studentId, studentName) {
+            // Pre-select the student in the create certificate modal
+            document.getElementById('studentSelect').value = studentId;
+            updateCertificatePreview();
+            
+            // Show the modal
+            new bootstrap.Modal(document.getElementById('createCertificateModal')).show();
         }
 
         function updateStatus(id, currentStatus) {
@@ -1110,94 +1180,7 @@ try {
             });
         }
 
-        function showQRCode(profileUrl, certificateNumber) {
-            console.log('Showing QR code for:', profileUrl);
-            currentQRUrl = profileUrl;
-            document.getElementById('qrCertificateNumber').textContent = certificateNumber;
-            document.getElementById('qrProfileUrl').textContent = profileUrl;
-            
-            // Show modal first
-            new bootstrap.Modal(document.getElementById('qrCodeModal')).show();
-            
-            // Clear previous QR code
-            const container = document.getElementById('qrCodeContainer');
-            container.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Generating QR Code...</span></div></div>';
-            
-            // Wait a bit for modal to show, then generate QR
-            setTimeout(function() {
-                generateQRCode(container, profileUrl, certificateNumber);
-            }, 500);
-        }
-        
-        function generateQRCode(container, profileUrl, certificateNumber) {
-            // Check if QRCode library is loaded
-            if (typeof QRCode === 'undefined') {
-                console.error('QRCode library not available');
-                container.innerHTML = '<div class="alert alert-warning"><strong>Library Loading...</strong><br>QR Code library is still loading. Please wait a moment and try again.</div>';
-                return;
-            }
-            
-            try {
-                // Clear container and create QR code container
-                container.innerHTML = '';
-                const qrContainer = document.createElement('div');
-                qrContainer.style.textAlign = 'center';
-                qrContainer.style.padding = '20px';
-                container.appendChild(qrContainer);
-                
-                // Generate new QR code using qrcodejs
-                const qr = new QRCode(qrContainer, {
-                    text: profileUrl,
-                    width: 250,
-                    height: 250,
-                    colorDark: '#2563eb',
-                    colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.M
-                });
-                
-                console.log('QR Code generated successfully');
-                
-                // Add download functionality
-                setTimeout(function() {
-                    const canvas = qrContainer.querySelector('canvas');
-                    const img = qrContainer.querySelector('img');
-                    
-                    if (canvas || img) {
-                        const downloadDiv = document.createElement('div');
-                        downloadDiv.className = 'mt-3 text-center';
-                        
-                        const downloadLink = document.createElement('a');
-                        if (canvas) {
-                            downloadLink.href = canvas.toDataURL('image/png');
-                        } else if (img) {
-                            downloadLink.href = img.src;
-                        }
-                        downloadLink.download = `qr-code-${certificateNumber}.png`;
-                        downloadLink.className = 'btn btn-outline-success btn-sm';
-                        downloadLink.innerHTML = '<i class="fas fa-download me-1"></i>Download QR Code';
-                        
-                        downloadDiv.appendChild(downloadLink);
-                        container.appendChild(downloadDiv);
-                    }
-                }, 500);
-                
-            } catch (error) {
-                console.error('Exception during QR generation:', error);
-                container.innerHTML = '<div class="alert alert-danger"><strong>Exception:</strong> ' + error.message + '<br><small>URL: ' + profileUrl + '</small></div>';
-            }
-        }
 
-        function copyQRUrl() {
-            copyToClipboard(currentQRUrl);
-        }
-        
-        function testQRGeneration() {
-            const testUrl = 'https://weldios.university/test';
-            console.log('Testing QR generation with:', testUrl);
-            
-            const container = document.getElementById('qrCodeContainer');
-            generateQRCode(container, testUrl, 'TEST');
-        }
 
         // Auto-populate fields based on common patterns
         document.querySelector('select[name="programme_type"]').addEventListener('change', function() {

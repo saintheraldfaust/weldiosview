@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $first_name = sanitize($_POST['first_name']);
                     $middle_name = sanitize($_POST['middle_name']);
                     $matriculation_number = sanitize($_POST['matriculation_number']);
+                    $registration_number = sanitize($_POST['registration_number']);
                     $email = sanitize($_POST['email']);
                     $phone = sanitize($_POST['phone']);
                     $address = sanitize($_POST['address']);
@@ -27,8 +28,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $gender = sanitize($_POST['gender']);
                     $nationality = sanitize($_POST['nationality']);
                     
-                    $stmt = $pdo->prepare("INSERT INTO students (surname, first_name, middle_name, matriculation_number, email, phone, address, date_of_birth, gender, nationality, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
-                    $stmt->execute([$surname, $first_name, $middle_name, $matriculation_number, $email, $phone, $address, $date_of_birth, $gender, $nationality]);
+                    // Validate that at least one ID number is provided
+                    if (empty($matriculation_number) && empty($registration_number)) {
+                        throw new Exception("Either Matriculation Number or Registration Number is required.");
+                    }
+                    
+                    // Handle photo upload
+                    $photo_path = null;
+                    if (isset($_FILES['student_photo']) && $_FILES['student_photo']['error'] == 0) {
+                        $upload_dir = '../uploads/student_photos/';
+                        $photo_name = uniqid() . '_' . basename($_FILES['student_photo']['name']);
+                        $full_path = $upload_dir . $photo_name;
+                        if (!move_uploaded_file($_FILES['student_photo']['tmp_name'], $full_path)) {
+                            throw new Exception("Failed to upload photo.");
+                        }
+                        // Store path relative to root directory (without ../)
+                        $photo_path = 'uploads/student_photos/' . $photo_name;
+                    }
+                    
+                    $stmt = $pdo->prepare("INSERT INTO students (surname, first_name, middle_name, matriculation_number, registration_number, email, phone, address, date_of_birth, gender, nationality, photo_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
+                    $stmt->execute([$surname, $first_name, $middle_name, $matriculation_number, $registration_number, $email, $phone, $address, $date_of_birth, $gender, $nationality, $photo_path]);
                     
                     $message = 'Student registered successfully!';
                     $message_type = 'success';
@@ -40,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $first_name = sanitize($_POST['first_name']);
                     $middle_name = sanitize($_POST['middle_name']);
                     $matriculation_number = sanitize($_POST['matriculation_number']);
+                    $registration_number = sanitize($_POST['registration_number']);
                     $email = sanitize($_POST['email']);
                     $phone = sanitize($_POST['phone']);
                     $address = sanitize($_POST['address']);
@@ -48,10 +68,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $nationality = sanitize($_POST['nationality']);
                     $status = sanitize($_POST['status']);
                     
-                    $stmt = $pdo->prepare("UPDATE students SET surname=?, first_name=?, middle_name=?, matriculation_number=?, email=?, phone=?, address=?, date_of_birth=?, gender=?, nationality=?, status=? WHERE id=?");
-                    $stmt->execute([$surname, $first_name, $middle_name, $matriculation_number, $email, $phone, $address, $date_of_birth, $gender, $nationality, $status, $student_id]);
+                    // Validate that at least one ID number is provided
+                    if (empty($matriculation_number) && empty($registration_number)) {
+                        throw new Exception("Either Matriculation Number or Registration Number is required.");
+                    }
                     
-                    $message = 'Student updated successfully!';
+                    // Handle photo upload (if provided)
+                    $photo_update = "";
+                    $params = [$surname, $first_name, $middle_name, $matriculation_number, $registration_number, $email, $phone, $address, $date_of_birth, $gender, $nationality, $status];
+                    
+                    if (isset($_FILES['student_photo']) && $_FILES['student_photo']['error'] == 0) {
+                        $upload_dir = '../uploads/student_photos/';
+                        $photo_name = uniqid() . '_' . basename($_FILES['student_photo']['name']);
+                        $full_path = $upload_dir . $photo_name;
+                        if (!move_uploaded_file($_FILES['student_photo']['tmp_name'], $full_path)) {
+                            throw new Exception("Failed to upload new photo.");
+                        }
+                        $photo_update = ", photo_path=?";
+                        // Store path relative to root directory (without ../)
+                        $photo_path = 'uploads/student_photos/' . $photo_name;
+                        $params[] = $photo_path;
+                    }
+                    
+                    $params[] = $student_id;
+                    $stmt = $pdo->prepare("UPDATE students SET surname=?, first_name=?, middle_name=?, matriculation_number=?, registration_number=?, email=?, phone=?, address=?, date_of_birth=?, gender=?, nationality=?, status=?" . $photo_update . " WHERE id=?");
+                    $stmt->execute($params);
+                    
+                    $message = 'Student updated successfully!' . (!empty($photo_update) ? ' Photo has been updated.' : '');
                     $message_type = 'success';
                     break;
                     
@@ -487,8 +530,16 @@ try {
                             <td>
                                 <div>
                                     <strong><?php echo htmlspecialchars($student['surname'] . ', ' . $student['first_name'] . ' ' . $student['middle_name']); ?></strong>
+                                    <?php if (!empty($student['photo_path'])): ?>
+                                        <i class="fas fa-camera text-success ms-1" title="Has passport photo"></i>
+                                    <?php endif; ?>
                                     <br>
-                                    <small class="text-muted"><?php echo htmlspecialchars($student['matriculation_number']); ?></small>
+                                    <?php if (!empty($student['matriculation_number'])): ?>
+                                        <small class="text-muted">Mat: <?php echo htmlspecialchars($student['matriculation_number']); ?></small>
+                                    <?php endif; ?>
+                                    <?php if (!empty($student['registration_number'])): ?>
+                                        <small class="text-muted">Reg: <?php echo htmlspecialchars($student['registration_number']); ?></small>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                             <td>
@@ -556,7 +607,7 @@ try {
                     <h5 class="modal-title">Register New Student</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="add_student">
                     <div class="modal-body p-4">
                         <div class="row">
@@ -574,12 +625,23 @@ try {
                             </div>
                         </div>
                         
+                        <div class="alert alert-info">
+                            <small><i class="fas fa-info-circle me-1"></i>Enter either Matriculation Number OR Registration Number (at least one is required)</small>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Matriculation Number *</label>
-                                <input type="text" class="form-control" name="matriculation_number" required>
+                                <label class="form-label">Matriculation Number</label>
+                                <input type="text" class="form-control" name="matriculation_number" id="matriculation_number">
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Registration Number</label>
+                                <input type="text" class="form-control" name="registration_number" id="registration_number">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Gender</label>
                                 <select class="form-select" name="gender">
                                     <option value="">Select Gender</option>
@@ -588,9 +650,13 @@ try {
                                     <option value="other">Other</option>
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Date of Birth</label>
                                 <input type="date" class="form-control" name="date_of_birth">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Nationality</label>
+                                <input type="text" class="form-control" name="nationality" value="Nigerian">
                             </div>
                         </div>
                         
@@ -605,14 +671,25 @@ try {
                             </div>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                <label class="form-label">Address</label>
-                                <textarea class="form-control" name="address" rows="2"></textarea>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Nationality</label>
-                                <input type="text" class="form-control" name="nationality" value="Nigerian">
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <textarea class="form-control" name="address" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="student_photo" class="form-label">Passport Photograph (Optional)</label>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <input class="form-control" type="file" id="student_photo" name="student_photo" accept="image/png, image/jpeg" onchange="previewAddPhoto(event)">
+                                </div>
+                                <div class="col-md-4">
+                                    <div id="add_photo_preview" class="text-center">
+                                        <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                            <i class="fas fa-camera text-muted"></i>
+                                        </div>
+                                        <small class="text-muted">Preview</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -633,7 +710,7 @@ try {
                     <h5 class="modal-title">Edit Student</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="POST" id="editStudentForm">
+                <form method="POST" id="editStudentForm" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="edit_student">
                     <input type="hidden" name="student_id" id="editStudentId">
                     <div class="modal-body p-4">
@@ -653,12 +730,23 @@ try {
                             </div>
                         </div>
                         
+                        <div class="alert alert-info">
+                            <small><i class="fas fa-info-circle me-1"></i>Enter either Matriculation Number OR Registration Number (at least one is required)</small>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Matriculation Number *</label>
-                                <input type="text" class="form-control" name="matriculation_number" id="editMatriculationNumber" required>
+                                <label class="form-label">Matriculation Number</label>
+                                <input type="text" class="form-control" name="matriculation_number" id="editMatriculationNumber">
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Registration Number</label>
+                                <input type="text" class="form-control" name="registration_number" id="editRegistrationNumber">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Gender</label>
                                 <select class="form-select" name="gender" id="editGender">
                                     <option value="">Select Gender</option>
@@ -667,9 +755,17 @@ try {
                                     <option value="other">Other</option>
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Date of Birth</label>
                                 <input type="date" class="form-control" name="date_of_birth" id="editDateOfBirth">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" name="status" id="editStatus">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="graduated">Graduated</option>
+                                </select>
                             </div>
                         </div>
                         
@@ -685,21 +781,28 @@ try {
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-8 mb-3">
                                 <label class="form-label">Address</label>
                                 <textarea class="form-control" name="address" rows="2" id="editAddress"></textarea>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Nationality</label>
                                 <input type="text" class="form-control" name="nationality" id="editNationality">
                             </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" name="status" id="editStatus">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                    <option value="graduated">Graduated</option>
-                                </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_student_photo" class="form-label">Update Passport Photograph (Optional)</label>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <input class="form-control" type="file" id="edit_student_photo" name="student_photo" accept="image/png, image/jpeg" onchange="previewEditPhoto(event)">
+                                    <small class="text-muted">Leave empty to keep current photo. Upload a new image to replace it.</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <div id="edit_photo_preview" class="text-center">
+                                        <small class="text-muted">Photo preview</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -738,12 +841,36 @@ try {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Validate that at least one ID number is provided
+        document.querySelector('#addStudentModal form').addEventListener('submit', function(e) {
+            const matricNumber = document.getElementById('matriculation_number').value.trim();
+            const regNumber = document.getElementById('registration_number').value.trim();
+            
+            if (!matricNumber && !regNumber) {
+                e.preventDefault();
+                alert('Please enter either a Matriculation Number or Registration Number.');
+                return false;
+            }
+        });
+
+        // Validate edit form as well
+        document.querySelector('#editStudentModal form').addEventListener('submit', function(e) {
+            const matricNumber = document.getElementById('editMatriculationNumber').value.trim();
+            const regNumber = document.getElementById('editRegistrationNumber').value.trim();
+            
+            if (!matricNumber && !regNumber) {
+                e.preventDefault();
+                alert('Please enter either a Matriculation Number or Registration Number.');
+                return false;
+            }
+        });
         function editStudent(student) {
             document.getElementById('editStudentId').value = student.id;
             document.getElementById('editSurname').value = student.surname || '';
             document.getElementById('editFirstName').value = student.first_name || '';
             document.getElementById('editMiddleName').value = student.middle_name || '';
             document.getElementById('editMatriculationNumber').value = student.matriculation_number || '';
+            document.getElementById('editRegistrationNumber').value = student.registration_number || '';
             document.getElementById('editEmail').value = student.email || '';
             document.getElementById('editPhone').value = student.phone || '';
             document.getElementById('editAddress').value = student.address || '';
@@ -751,6 +878,18 @@ try {
             document.getElementById('editGender').value = student.gender || '';
             document.getElementById('editNationality').value = student.nationality || '';
             document.getElementById('editStatus').value = student.status || 'active';
+            
+            // Update photo status and preview
+            const photoLabel = document.querySelector('label[for="edit_student_photo"]');
+            const photoPreview = document.getElementById('edit_photo_preview');
+            
+            if (student.photo_path) {
+                photoLabel.innerHTML = 'Update Passport Photograph <small class="text-success">(Current: Has Photo)</small>';
+                photoPreview.innerHTML = '<img src="' + student.photo_path + '" alt="Current Photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #e2e8f0;"><br><small class="text-muted">Current</small>';
+            } else {
+                photoLabel.innerHTML = 'Add Passport Photograph <small class="text-muted">(Current: No Photo)</small>';
+                photoPreview.innerHTML = '<div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;"><i class="fas fa-user text-muted"></i></div><br><small class="text-muted">No Photo</small>';
+            }
             
             new bootstrap.Modal(document.getElementById('editStudentModal')).show();
         }
@@ -760,6 +899,39 @@ try {
             document.getElementById('deleteStudentId').value = id;
             new bootstrap.Modal(document.getElementById('deleteModal')).show();
         }
+
+        function previewEditPhoto(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('edit_photo_preview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = '<img src="' + e.target.result + '" alt="New Photo Preview" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #2563eb;"><br><small class="text-primary">New Photo</small>';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function previewAddPhoto(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('add_photo_preview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = '<img src="' + e.target.result + '" alt="Photo Preview" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #10b981;"><br><small class="text-success">Selected</small>';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '<div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;"><i class="fas fa-camera text-muted"></i></div><br><small class="text-muted">Preview</small>';
+            }
+        }
+
+        // Reset add student form when modal is closed
+        document.getElementById('addStudentModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('add_photo_preview').innerHTML = '<div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;"><i class="fas fa-camera text-muted"></i></div><br><small class="text-muted">Preview</small>';
+        });
     </script>
 </body>
 </html>

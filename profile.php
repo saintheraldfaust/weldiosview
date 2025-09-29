@@ -16,7 +16,7 @@ try {
             c.certificate_number, c.programme_type, c.programme_title, c.department, 
             c.class_of_degree, c.year_of_graduation, c.profile_url, c.issue_date, c.status as certificate_status, c.file_path, c.image_path,
             s.surname, s.first_name, s.middle_name, s.matriculation_number, s.email, s.phone,
-            s.date_of_birth, s.gender, s.nationality, s.address, s.status as student_status
+            s.date_of_birth, s.gender, s.nationality, s.address, s.status as student_status, s.photo_path
         FROM certificates c 
         JOIN students s ON c.student_id = s.id 
         WHERE c.profile_url = ? AND c.status = 'active'
@@ -379,13 +379,17 @@ function safeDisplayDate($date, $format = 'F j, Y', $placeholder = 'Not availabl
         <div class="profile-container">
             <div class="profile-header">
                 <div class="profile-avatar">
-                    <img src="assets/weldioslogo.png" alt="weldios university Logo">
+                    <?php if (!empty($student['photo_path'])): ?>
+                        <img src="<?php echo htmlspecialchars($student['photo_path']); ?>" alt="Student Photo" style="width: 100%; height: 100%; object-fit: cover;">
+                    <?php else: ?>
+                        <img src="assets/weldioslogo.png" alt="weldios university Logo">
+                    <?php endif; ?>
                 </div>
                 <div class="profile-name"><?php 
                     $fullName = trim(($student['first_name'] ?? '') . ' ' . ($student['surname'] ?? ''));
                     echo safeDisplay($fullName, 'Name Not Available'); 
                 ?></div>
-                <div class="profile-id">Student ID: <?php echo safeDisplay($student['matriculation_number'] ?? '', 'ID Not Available'); ?></div>
+                <div class="profile-id">Certificate No: <?php echo safeDisplay($student['certificate_number'] ?? '', 'Certificate Not Available'); ?></div>
                 <div style="margin-top: 1rem;">
                     <span class="status-badge status-active">Verified Certificate</span>
                 </div>
@@ -400,30 +404,36 @@ function safeDisplayDate($date, $format = 'F j, Y', $placeholder = 'Not availabl
                         echo safeDisplay($fullName); 
                     ?></div>
                 </div>
+                <?php if (!empty($student['date_of_birth']) && $student['date_of_birth'] !== '0000-00-00'): ?>
                 <div class="data-item">
                     <div class="data-label">Date of Birth</div>
-                    <div class="data-value"><?php echo safeDisplayDate($student['date_of_birth'] ?? null); ?></div>
+                    <div class="data-value"><?php echo safeDisplayDate($student['date_of_birth']); ?></div>
                 </div>
+                <?php endif; ?>
+                <?php if (!empty($student['gender'])): ?>
                 <div class="data-item">
                     <div class="data-label">Gender</div>
-                    <div class="data-value"><?php echo safeDisplay(ucfirst($student['gender'] ?? '')); ?></div>
+                    <div class="data-value"><?php echo safeDisplay(ucfirst($student['gender'])); ?></div>
                 </div>
+                <?php endif; ?>
+                <?php if (!empty($student['nationality'])): ?>
                 <div class="data-item">
                     <div class="data-label">Nationality</div>
-                    <div class="data-value"><?php echo safeDisplay($student['nationality'] ?? ''); ?></div>
+                    <div class="data-value"><?php echo safeDisplay($student['nationality']); ?></div>
                 </div>
+                <?php endif; ?>
+                <?php if (!empty($student['email'])): ?>
                 <div class="data-item">
                     <div class="data-label">Email</div>
-                    <div class="data-value"><?php echo safeDisplay($student['email'] ?? ''); ?></div>
+                    <div class="data-value"><?php echo safeDisplay($student['email']); ?></div>
                 </div>
+                <?php endif; ?>
+                <?php if (!empty($student['phone'])): ?>
                 <div class="data-item">
                     <div class="data-label">Phone</div>
-                    <div class="data-value"><?php echo safeDisplay($student['phone'] ?? ''); ?></div>
+                    <div class="data-value"><?php echo safeDisplay($student['phone']); ?></div>
                 </div>
-                <div class="data-item">
-                    <div class="data-label">Matriculation Number</div>
-                    <div class="data-value"><?php echo safeDisplay($student['matriculation_number'] ?? ''); ?></div>
-                </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -462,30 +472,7 @@ function safeDisplayDate($date, $format = 'F j, Y', $placeholder = 'Not availabl
             </div>
         </div>
 
-        <?php if (!empty($student['image_path'])): ?>
-        <div class="certificate-image-section">
-            <div class="section-title">Certificate Image</div>
-            <div class="certificate-image-container">
-                <img src="<?php echo BASE_URL . substr($student['image_path'], 3); ?>" alt="Certificate Image">
-            </div>
-        </div>
-        <?php endif; ?>
 
-        <div class="qr-section">
-            <div class="section-title">Certificate Verification QR Code</div>
-            <p style="color: #666666; margin-bottom: 1.5rem;">Scan this QR code to verify this certificate</p>
-            <div class="qr-code-container">
-                <div id="qrcode"></div>
-            </div>
-            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <button onclick="copyProfileUrl('<?php echo BASE_URL . 'profile.php?id=' . $student['profile_url']; ?>')" class="btn btn-secondary">
-                    Copy Profile URL
-                </button>
-                <button onclick="window.print()" class="btn btn-primary">
-                    Print Certificate
-                </button>
-            </div>
-        </div>
 
         <div style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 1px solid #e5e5e5;">
             <p style="color: #666666; font-size: 0.9rem;">

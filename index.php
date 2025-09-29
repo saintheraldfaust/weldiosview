@@ -246,32 +246,7 @@
             color: #000000;
         }
 
-        .qr-section {
-            background-color: #f9f9f9;
-            border: 2px dashed #e5e5e5;
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            margin: 2rem 0;
-        }
 
-        .qr-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #2563eb;
-            margin-bottom: 0.5rem;
-        }
-
-        .qr-subtitle {
-            font-size: 0.875rem;
-            color: #666666;
-            margin-bottom: 1.5rem;
-        }
-
-        #qrcode {
-            display: inline-block;
-            margin: 1rem 0;
-        }
 
         .button-group {
             display: flex;
@@ -432,25 +407,9 @@
             font-weight: 600;
         }
 
-        .qr-section {
-            text-align: center;
-            margin-top: 1.5rem;
-            padding: 1.5rem;
-            background: white;
-            border-radius: 12px;
-            border: 2px dashed var(--primary-color);
-        }
 
-        #qrcode {
-            display: inline-block;
-            margin: 10px 0;
-        }
 
-        #qrcode canvas,
-        #qrcode img {
-           
-            
-        }
+
 
         .footer-links {
             text-align: center;
@@ -521,7 +480,7 @@
         <div class="form">
             <form id="verificationForm" method="POST">
                 <div class="form-group">
-                    <label for="certificateNumber" class="label">Certificate Number</label>
+                    <label for="certificateNumber" class="label">Matriculation/Certificate Number</label>
                     <input 
                         type="text" 
                         class="input" 
@@ -609,18 +568,9 @@
                             echo '<div class="info-label">Year of Graduation</div>';
                             echo '<div class="info-value">' . safeDisplay($student['year_of_graduation'] ?? '') . '</div>';
                             echo '</div>';
-                            
-                            echo '<div class="info-item">';
-                            echo '<div class="info-label">Matriculation Number</div>';
-                            echo '<div class="info-value">' . safeDisplay($student['matriculation_number'] ?? '') . '</div>';
-                            echo '</div>';
                             echo '</div>';
                             
-                            echo '<div class="qr-section">';
-                            echo '<h4 class="qr-title">Verification QR Code</h4>';
-                            echo '<p class="qr-subtitle">Scan to view complete certificate details</p>';
-                            echo '<div id="qrcode"></div>';
-                            echo '<div class="button-group">';
+                            echo '<div class="button-group" style="margin-top: 1.5rem; text-align: center;">';
                             echo '<a href="' . $profile_url . '" class="button-secondary" target="_blank">';
                             echo 'View Full Profile';
                             echo '</a>';
@@ -628,38 +578,11 @@
                             echo 'Copy URL';
                             echo '</button>';
                             echo '</div>';
-                            echo '</div>';
                             
                             echo '</div>';
                             echo '</div>';
                             
-                            // Clean QR code generation
-                            echo '<script>';
-                            echo 'document.addEventListener("DOMContentLoaded", function() {';
-                            echo '    setTimeout(function() {';
-                            echo '        try {';
-                            echo '            if (typeof QRCode !== "undefined") {';
-                            echo '                const qrContainer = document.getElementById("qrcode");';
-                            echo '                if (qrContainer) {';
-                            echo '                    const qr = new QRCode(qrContainer, {';
-                            echo '                        text: "' . $profile_url . '",';
-                            echo '                        width: 160,';
-                            echo '                        height: 160,';
-                            echo '                        colorDark: "#000000",';
-                            echo '                        colorLight: "#ffffff",';
-                            echo '                        correctLevel: QRCode.CorrectLevel.M';
-                            echo '                    });';
-                            echo '                }';
-                            echo '            } else {';
-                            echo '                document.getElementById("qrcode").innerHTML = "<p style=\"color: #666;\">QR Code unavailable</p>";';
-                            echo '            }';
-                            echo '        } catch (error) {';
-                            echo '            console.error("QR Code generation error:", error);';
-                            echo '            document.getElementById("qrcode").innerHTML = "<p style=\"color: #666;\">QR Code generation failed</p>";';
-                            echo '        }';
-                            echo '    }, 500);';
-                            echo '});';
-                            echo '</script>';
+
                             
                         } else {
                             // Invalid certificate
@@ -701,7 +624,7 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <script>
         // Form handling
         document.getElementById('verificationForm').addEventListener('submit', function(e) {
