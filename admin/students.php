@@ -46,6 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $photo_path = 'uploads/student_photos/' . $photo_name;
                     }
                     
+                    // Fix AUTO_INCREMENT to ensure proper ID assignment
+                    $maxId = $pdo->query("SELECT COALESCE(MAX(id), 0) + 1 FROM students")->fetchColumn();
+                    $pdo->exec("ALTER TABLE students AUTO_INCREMENT = $maxId");
+                    
                     $stmt = $pdo->prepare("INSERT INTO students (surname, first_name, middle_name, matriculation_number, registration_number, email, phone, address, date_of_birth, gender, nationality, photo_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
                     $stmt->execute([$surname, $first_name, $middle_name, $matriculation_number, $registration_number, $email, $phone, $address, $date_of_birth, $gender, $nationality, $photo_path]);
                     

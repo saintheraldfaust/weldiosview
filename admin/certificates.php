@@ -18,6 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 case 'create_certificate':
                     $student_id = (int)$_POST['student_id'];
                     $certificate_number = sanitize($_POST['certificate_number']);
+                    
+                    // Check if certificate number already exists
+                    $checkStmt = $pdo->prepare("SELECT id FROM certificates WHERE certificate_number = ?");
+                    $checkStmt->execute([$certificate_number]);
+                    if ($checkStmt->fetch()) {
+                        throw new Exception("Certificate number '{$certificate_number}' already exists. Each certificate must have a unique number.");
+                    }
                     $programme_type = sanitize($_POST['programme_type']);
                     $programme_title = sanitize($_POST['programme_title']);
                     $department = sanitize($_POST['department']);
